@@ -81,11 +81,16 @@ def generate_random_booking_id():
 # Book a Room
 # Define a dictionary that maps room names to their capacities
 room_capacity = {
-    "Room 1": 6,
-    "Room 2": 8,
-    "Room 3": 10,
-    "Room 4": 12,
-    "Room 5": 14,
+    "HIMALAYA - Basement": 20,
+    "NEELGIRI - Ground Floor": 7,
+    "ARAVALI  - Ground Floor": 7,
+    "KAILASH - 1 Floor": 7,
+    "ANNAPURNA - 1 Floor": 4,
+    "EVEREST  - 2 Floor": 12,
+    "KANANACJUNGA - 2 Floor": 7,
+    "SHIVALIK - 3 Floor": 4,
+    "TRISHUL - 3 Floor": 4,
+    "DHAULAGIRI - 3 Floor": 7,
 }
 
 # ...
@@ -515,7 +520,7 @@ st.set_page_config(
 
 
 # Streamlit App
-st.title("Meeting Room Booking System")
+st.title("Sugam Group - Meeting Room Booking System")
 
 date = current_time_ist.date()
 time1=current_time_ist.time()

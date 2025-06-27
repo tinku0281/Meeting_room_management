@@ -303,21 +303,44 @@ def cancel_room():
 
     
 
-def send_cancellation_email(user_email,booking_id,name,description,date1,selected_room,start_time,end_time):
-    # # Your email credentials
-    # sender_email = st.secrets['sender_email']
-    # sender_password = st.secrets['sender_password']
+# def send_cancellation_email(booking_id,name,description,date1,selected_room,start_time,end_time):
+#     # def send_cancellation_email(user_email,booking_id,name,description,date1,selected_room,start_time,end_time):
+#     # Your email credentials
+#     sender_email = st.secrets['sender_email']
+#     sender_password = st.secrets['sender_password']
+#     Continue
 
-    # # Create the email content
-    # message = MIMEMultipart()
-    # message["From"] = 'Meeting Room Booking System'
-    # message["To"] = user_email
-    # message["Subject"] = f"🚫 Cancellation Confirmation: (ID-{booking_id})"
-    Continue
-    # Message body
-    #message_text = f"Hello {name}!\n\nWe're sorry to inform you that your booking has been canceled. Here are the details of the canceled reservation:\n\n{booking_details}\n\nIf you have any questions or need further assistance, please don't hesitate to contact us.\n\nBest regards,\nYour Meeting Room Booking Team"
-    # Create the email content as an HTML table
-    message_text = f"""
+#     # Create the email content
+#     message = MIMEMultipart()
+#     message["From"] = 'Meeting Room Booking System'
+#     message["To"] = user_email
+#     message["Subject"] = f"🚫 Cancellation Confirmation: (ID-{booking_id})"
+    
+#     # Message body
+#     #message_text = f"Hello {name}!\n\nWe're sorry to inform you that your booking has been canceled. Here are the details of the canceled reservation:\n\n{booking_details}\n\nIf you have any questions or need further assistance, please don't hesitate to contact us.\n\nBest regards,\nYour Meeting Room Booking Team"
+#     # Create the email content as an HTML table
+#     message_text = f"""
+
+    def send_cancellation_email(booking_id, name, description, date1, selected_room, start_time, end_time):
+    # If you want to log or display the cancellation info instead of emailing
+    cancellation_info = f"""
+    Booking Cancelled:
+    -------------------
+    Booking ID     : {booking_id}
+    Name           : {name}
+    Description    : {description}
+    Date           : {date1}
+    Room           : {selected_room}
+    Start Time     : {start_time}
+    End Time       : {end_time}
+    """
+    print(cancellation_info)
+    # Or use st.write() if you're in Streamlit
+    # st.write(cancellation_info)
+
+    # You can return this if needed elsewhere
+    return cancellation_info
+    
 <html>
 <body>
     <p>Hello {name}!</p>

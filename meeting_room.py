@@ -4,7 +4,6 @@ import csv
 from datetime import timedelta
 import random 
 import pandas as pd
-import re
 import pytz
 
 # Set the timezone to "Asia/Kolkata" (Indian Standard Time)
@@ -170,7 +169,7 @@ def book_room():
                                             )
                                     
                                     st.success(f"Booking successful! Your booking ID is {booking_id}.")
-                                
+
 def is_upcoming(booking, current_datetime):
     date_str = booking["date"]
     time_str = booking["start_time"]
@@ -200,64 +199,56 @@ def cancel_room():
     st.subheader("Select the reservation to cancel:")
     selected_reservation = st.selectbox("Upcoming Reservations", [f"Booking ID {booking_id}" for booking_id in booking_data["room_bookings"].keys() if is_upcoming(booking_data["room_bookings"][booking_id], current_datetime)], index=None)
 
-    if selected_reservation:
-        user_email_to_cancel = st.text_input("Enter Registered Mail used for booking:")
+    if selected_reservation and st.button("Cancel Reservation"):
+        selected_booking_id = int(selected_reservation.split()[-1].strip())
 
-        if user_email_to_cancel:
-            user_email_to_cancel = user_email_to_cancel.lower()
-            if st.button("Cancel Reservation"):
-                selected_booking_id = int(selected_reservation.split()[-1].strip())
+        if selected_booking_id in booking_data["room_bookings"]:
+            reservation = booking_data["room_bookings"][selected_booking_id]
+            room = reservation["room"]
+            date = reservation["date"]
+            start_time = reservation["start_time"]
+            end_time = reservation["end_time"]
 
-                if selected_booking_id in booking_data["room_bookings"]:
-                    reservation = booking_data["room_bookings"][selected_booking_id]
-                    room = reservation["room"]
-                    date = reservation["date"]
-                    start_time = reservation["start_time"]
-                    end_time = reservation["end_time"]
+            formatted_start_time = str(start_time)
+            formatted_end_time = str(end_time)
+            room_availability = booking_data["room_availability"]
 
-                    formatted_start_time = str(start_time)
-                    formatted_end_time = str(end_time)
-                    room_availability = booking_data["room_availability"]
+            if date in room_availability and room in room_availability[date]:
+                room_availability[date][room] = [
+                    booking
+                    for booking in room_availability[date][room]
+                    if (formatted_start_time, formatted_end_time)
+                    != (booking[0], booking[1])
+                ]
 
-                    if date in room_availability and room in room_availability[date]:
-                        room_availability[date][room] = [
-                            booking
-                            for booking in room_availability[date][room]
-                            if (formatted_start_time, formatted_end_time)
-                            != (booking[0], booking[1])
-                        ]
+            booking_data["room_bookings"].pop(selected_booking_id)
 
-                    if user_email_to_cancel == reservation["email"].lower():
-                        booking_data["room_bookings"].pop(selected_booking_id)
+            with open(booking_data_file, "w", newline="") as file:
+                fieldnames = [
+                    "booking_id",
+                    "date",
+                    "start_time",
+                    "end_time",
+                    "room",
+                    "name",
+                    "description",
+                ]
+                writer = csv.DictWriter(file, fieldnames=fieldnames)
+                writer.writeheader()
+                for booking_id, booking_info in booking_data["room_bookings"].items():
+                    writer.writerow(
+                        {
+                            "booking_id": booking_id,
+                            "date": booking_info["date"],
+                            "start_time": booking_info["start_time"],
+                            "end_time": booking_info["end_time"],
+                            "room": booking_info["room"],
+                            "name": booking_info["name"],
+                            "description": booking_info["description"],
+                        }
+                    )
 
-                        with open(booking_data_file, "w", newline="") as file:
-                            fieldnames = [
-                                "booking_id",
-                                "date",
-                                "start_time",
-                                "end_time",
-                                "room",
-                                "name",
-                                "description",
-                            ]
-                            writer = csv.DictWriter(file, fieldnames=fieldnames)
-                            writer.writeheader()
-                            for booking_id, booking_info in booking_data["room_bookings"].items():
-                                writer.writerow(
-                                    {
-                                        "booking_id": booking_id,
-                                        "date": booking_info["date"],
-                                        "start_time": booking_info["start_time"],
-                                        "end_time": booking_info["end_time"],
-                                        "room": booking_info["room"],
-                                        "name": booking_info["name"],
-                                        "description": booking_info["description"],
-                                    }
-                                )
-
-                        st.success(f"Reservation (Booking ID {selected_booking_id}) has been cancelled.")
-                    else:
-                        st.warning("Email address does not match. Cancellation failed.")
+            st.success(f"Reservation (Booking ID {selected_booking_id}) has been cancelled.")
 
 # View Reservations
 def view_reservations():
@@ -296,7 +287,7 @@ def view_reservations():
                 st.warning("No upcoming bookings.")
             else:
                 upcoming_reservations_df = pd.DataFrame(upcoming_bookings)
-                upcoming_reservations_df = upcoming_reservations_df.drop(columns=["email", "description"])
+                upcoming_reservations_df = upcoming_reservations_df.drop(columns=["description"])
                 upcoming_reservations_df.columns = ["Booking ID", "Date", "Start Time", "End Time", "Venue", "Booked by"]
                 st.table(upcoming_reservations_df.assign(hack='').set_index('hack'))
 
@@ -306,7 +297,7 @@ def view_reservations():
                 st.warning("No past bookings.")
             else:
                 past_reservations_df = pd.DataFrame(past_bookings)
-                past_reservations_df = past_reservations_df.drop(columns=["email", "description"])
+                past_reservations_df = past_reservations_df.drop(columns=["description"])
                 past_reservations_df.columns = ["Booking ID", "Date", "Start Time", "End Time", "Venue", "Booked by"]
                 st.table(past_reservations_df.assign(hack='').set_index('hack'))
 

@@ -5,10 +5,6 @@ from datetime import timedelta
 import random 
 import pandas as pd
 import re
-import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-from pytz import timezone 
 import pytz
 
 # Set the timezone to "Asia/Kolkata" (Indian Standard Time)
@@ -36,7 +32,6 @@ try:
                 "end_time": row["end_time"],
                 "room": row["room"],
                 "name": row["name"],
-                "email": row["email"],
                 "description": row["description"],
             }
 
@@ -79,7 +74,6 @@ def generate_random_booking_id():
     return random.randint(1000, 9999)
 
 # Book a Room
-# Define a dictionary that maps room names to their capacities
 room_capacity = {
     "HIMALAYA - Basement": 20,
     "NEELGIRI - Ground Floor": 7,
@@ -93,11 +87,9 @@ room_capacity = {
     "DHAULAGIRI - 3 Floor": 7,
 }
 
-# ...
-
 def book_room():
     st.header("Book a Room")
-    date = st.date_input("Select the Date:", min_value=current_time_ist.date(),value=None)
+    date = st.date_input("Select the Date:", min_value=current_time_ist.date(), value=None)
     current_date = current_time_ist.date()
     if date:
         office_start_time = datetime.time(8, 0)
@@ -107,7 +99,7 @@ def book_room():
             next_time = (datetime.datetime.combine(date, start_times[-1]) + timedelta(minutes=15)).time()
             start_times.append(next_time)
         
-        start_time = st.selectbox("Select the Start Time:", start_times,index=None)
+        start_time = st.selectbox("Select the Start Time:", start_times, index=None)
         current_time = current_time_ist.time()
         if start_time:
             if (date == current_date and start_time < current_time):
@@ -116,7 +108,7 @@ def book_room():
                 end_of_day = min(office_end_time, datetime.time(23, 59))
                 available_end_times = [datetime.datetime.combine(date, start_time) + timedelta(minutes=i) for i in range(15, (end_of_day.hour - start_time.hour) * 60 + 1, 15)]
                 formatted_end_times = [et.strftime('%H:%M:%S') for et in available_end_times]
-                end_time = st.selectbox("Select the End Time:", formatted_end_times,index=None)
+                end_time = st.selectbox("Select the End Time:", formatted_end_times, index=None)
                 if end_time:
                     available_room_options = []
                     for room, capacity in room_capacity.items():
@@ -127,31 +119,25 @@ def book_room():
                         st.warning("Rooms are not available during this time.")
                     else:
                         st.info("Available Rooms")
-                        room_choice = st.selectbox("Select a Room:", available_room_options,index=None)
+                        room_choice = st.selectbox("Select a Room:", available_room_options, index=None)
                         if room_choice:
                             st.subheader('Enter Booking Details')
-                            # Extract the selected room name (excluding the capacity information)
                             selected_room = room_choice.split(" (Capacity: ")[0]
                             description = st.text_input("Enter Meeting Title:")
                             name = st.text_input("Enter your Name:")
-                            email = st.text_input("Enter your Email:")
-                            if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
-                                st.warning("Please enter a valid email address.")
-                                return
                             
                             if not name or not description:
                                 st.warning("All details are mandatory.")
                             else:
                                 if st.button("Book Room"):
-                                    booking_id = generate_random_booking_id()  # Generate a random 4-digit booking ID
+                                    booking_id = generate_random_booking_id()
                                     booking_data["room_bookings"][booking_id] = {
-                                    "date": str(date),
-                                    "start_time": str(start_time),
-                                    "end_time": str(end_time),
-                                    "room": selected_room,  # Use the extracted room name
-                                    "name": name,
-                                    "email": email,
-                                    "description": description,
+                                        "date": str(date),
+                                        "start_time": str(start_time),
+                                        "end_time": str(end_time),
+                                        "room": selected_room,
+                                        "name": name,
+                                        "description": description,
                                     }
                                     if str(date) not in booking_data["room_availability"]:
                                         booking_data["room_availability"][str(date)] = {}
@@ -160,40 +146,30 @@ def book_room():
                                     booking_data["room_availability"][str(date)][selected_room].append((str(start_time), str(end_time)))
                                     with open(booking_data_file, "w", newline="") as file:
                                         fieldnames = [
-                                        "booking_id",
-                                        "date",
-                                        "start_time",
-                                        "end_time",
-                                        "room",
-                                        "name",
-                                        "email",
-                                        "description",
+                                            "booking_id",
+                                            "date",
+                                            "start_time",
+                                            "end_time",
+                                            "room",
+                                            "name",
+                                            "description",
                                         ]
                                         writer = csv.DictWriter(file, fieldnames=fieldnames)
                                         writer.writeheader()
                                         for booking_id, booking_info in booking_data["room_bookings"].items():
                                             writer.writerow(
-                                            {
-                                            "booking_id": booking_id,
-                                            "date": booking_info["date"],
-                                            "start_time": booking_info["start_time"],
-                                            "end_time": booking_info["end_time"],
-                                            "room": booking_info["room"],
-                                            "name": booking_info["name"],
-                                            "email": booking_info["email"],
-                                            "description": booking_info["description"],
-                                            }
+                                                {
+                                                    "booking_id": booking_id,
+                                                    "date": booking_info["date"],
+                                                    "start_time": booking_info["start_time"],
+                                                    "end_time": booking_info["end_time"],
+                                                    "room": booking_info["room"],
+                                                    "name": booking_info["name"],
+                                                    "description": booking_info["description"],
+                                                }
                                             )
-                        
-                                    if send_confirmation_email(email,booking_id,name,description,selected_room,start_time,end_time):
-                                        st.success(f"Booking successful! Your booking ID is {booking_id}.")
-                                        st.success("A confirmation email has been sent to the registered mail.")
-                                    else:
-                                        st.success(f"Booking successful! Your booking ID is {booking_id}.")
-                                        st.warning("But confirmation email could not be sent to the registered mail.")
-                                
                                     
-                                
+                                    st.success(f"Booking successful! Your booking ID is {booking_id}.")
                                 
 def is_upcoming(booking, current_datetime):
     date_str = booking["date"]
@@ -203,23 +179,17 @@ def is_upcoming(booking, current_datetime):
     booking_datetime = datetime.datetime.combine(booking_date, booking_time)
     current_datetime = datetime.datetime.strptime(current_datetime, '%y-%m-%d %H:%M:%S')
     return booking_datetime > current_datetime
-    
 
 # Cancel Room Reservation
-# ...
-
-# Update the cancel_room function to filter upcoming reservations
 def cancel_room():
     st.header("Cancel Room Reservation")
 
-    # Get the list of booked rooms
     booked_rooms = list(booking_data["room_bookings"].values())
 
     if not booked_rooms:
         st.warning("There are no existing room reservations to cancel.")
         return
 
-    # Filter the reservations to include only upcoming bookings
     current_datetime = ctif
     upcoming_reservations = [booking for booking in booked_rooms if is_upcoming(booking, current_datetime)]
 
@@ -231,7 +201,6 @@ def cancel_room():
     selected_reservation = st.selectbox("Upcoming Reservations", [f"Booking ID {booking_id}" for booking_id in booking_data["room_bookings"].keys() if is_upcoming(booking_data["room_bookings"][booking_id], current_datetime)], index=None)
 
     if selected_reservation:
-        # Rest of the cancellation logic remains the same
         user_email_to_cancel = st.text_input("Enter Registered Mail used for booking:")
 
         if user_email_to_cancel:
@@ -269,7 +238,6 @@ def cancel_room():
                                 "end_time",
                                 "room",
                                 "name",
-                                "email",
                                 "description",
                             ]
                             writer = csv.DictWriter(file, fieldnames=fieldnames)
@@ -283,134 +251,24 @@ def cancel_room():
                                         "end_time": booking_info["end_time"],
                                         "room": booking_info["room"],
                                         "name": booking_info["name"],
-                                        "email": booking_info["email"],
                                         "description": booking_info["description"],
                                     }
                                 )
 
-                        user_email = reservation["email"]
-                        #booking_details = f"Booking ID: {selected_booking_id}\nMeeting Title: {reservation['description']}\nDate: {date}\nLocation: {room}\nStart Time: {start_time}\nEnd Time: {end_time}\n"
-                        if send_cancellation_email(user_email,selected_booking_id, reservation['name'],reservation['description'],date,room,start_time,end_time):
-                            st.success(f"Reservation (Booking ID {selected_booking_id}) has been cancelled.")
-                            st.success("A confirmation email has been sent to the registered email.")
-                        else:
-                            st.success(f"Reservation (Booking ID {selected_booking_id}) has been cancelled.")
-                            st.warning("But confirmation email could not be sent to the registered email.")
+                        st.success(f"Reservation (Booking ID {selected_booking_id}) has been cancelled.")
                     else:
                         st.warning("Email address does not match. Cancellation failed.")
-
-# ...
-
-    
-
-# def send_cancellation_email(booking_id,name,description,date1,selected_room,start_time,end_time):
-#     # def send_cancellation_email(user_email,booking_id,name,description,date1,selected_room,start_time,end_time):
-#     # Your email credentials
-#     sender_email = st.secrets['sender_email']
-#     sender_password = st.secrets['sender_password']
-#     Continue
-
-#     # Create the email content
-#     message = MIMEMultipart()
-#     message["From"] = 'Meeting Room Booking System'
-#     message["To"] = user_email
-#     message["Subject"] = f"🚫 Cancellation Confirmation: (ID-{booking_id})"
-    
-#     # Message body
-#     #message_text = f"Hello {name}!\n\nWe're sorry to inform you that your booking has been canceled. Here are the details of the canceled reservation:\n\n{booking_details}\n\nIf you have any questions or need further assistance, please don't hesitate to contact us.\n\nBest regards,\nYour Meeting Room Booking Team"
-#     # Create the email content as an HTML table
-#     message_text = f"""
-
-    def send_cancellation_email(booking_id, name, description, date1, selected_room, start_time, end_time):
-    # If you want to log or display the cancellation info instead of emailing
-    cancellation_info = f"""
-    Booking Cancelled:
-    -------------------
-    Booking ID     : {booking_id}
-    Name           : {name}
-    Description    : {description}
-    Date           : {date1}
-    Room           : {selected_room}
-    Start Time     : {start_time}
-    End Time       : {end_time}
-    """
-    print(cancellation_info)
-    # Or use st.write() if you're in Streamlit
-    # st.write(cancellation_info)
-
-    # You can return this if needed elsewhere
-    return cancellation_info
-    
-<html>
-<body>
-    <p>Hello {name}!</p>
-    <p>We're sorry to inform you that your booking has been canceled. Here are the details of the canceled reservation:</p>
-    <table style="width: 100%;">
-        <tr>
-            <td><strong>Booking ID:</strong></td>
-            <td>{booking_id}</td>
-        </tr>
-        <tr>
-            <td><strong>Meeting Title:</strong></td>
-            <td>{description}</td>
-        </tr>
-        <tr>
-            <td><strong>Date:</strong></td>
-            <td>{date1}</td>
-        </tr>
-        <tr>
-            <td><strong>Location:</strong></td>
-            <td>{selected_room}</td>
-        </tr>
-        <tr>
-            <td><strong>Start Time:</strong></td>
-            <td>{start_time}</td>
-        </tr>
-        <tr>
-            <td><strong>End Time:</strong></td>
-            <td>{end_time}</td>
-        </tr>
-    </table>
-    <p>If you have any questions or need further assistance, please don't hesitate to contact us.</p>
-    <p>Best regards,<br>Your Meeting Room Booking Team</p>
-</body>
-</html>
-"""
-    
-    message.attach(MIMEText(message_text, "html"))
-
-    # Connect to the SMTP server
-    try:
-        server = smtplib.SMTP("smtp.gmail.com", 587)  # Replace with your SMTP server and port
-        server.starttls()
-        server.login(sender_email, sender_password)
-
-        # Send the email
-        server.sendmail(sender_email, user_email, message.as_string())
-        server.quit()
-        return True
-    except Exception as e:
-        print(f"Email not sent. Error: {str(e)}")
-        return False
-
-
-
-
-
 
 # View Reservations
 def view_reservations():
     st.header("View Bookings")
 
-    # Get the list of booked rooms
     booked_rooms = list(booking_data["room_bookings"].values())
 
     if not booked_rooms:
         st.warning("There are no existing room reservations to view.")
     else:
-        # Get the current date and time
         current_datetime = datetime.datetime.strptime(ctif, '%y-%m-%d %H:%M:%S')
-        # Create separate lists for past and upcoming bookings
         past_bookings = []
         upcoming_bookings = []
 
@@ -418,7 +276,6 @@ def view_reservations():
             date_str = booking["date"]
             time_str = booking["start_time"]
 
-            
             booking_date = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
             booking_time = datetime.datetime.strptime(time_str, '%H:%M:%S').time()
             booking_datetime = datetime.datetime.combine(booking_date, booking_time)
@@ -428,13 +285,11 @@ def view_reservations():
             else:
                 upcoming_bookings.append(booking)
 
-        # Sort the bookings by date and time
         past_bookings = sorted(past_bookings, key=lambda x: (x["date"], x["start_time"]))
         upcoming_bookings = sorted(upcoming_bookings, key=lambda x: (x["date"], x["start_time"]))
 
-        tab1, tab2= st.tabs(["Upcoming Bookings", "Booking History"])
+        tab1, tab2 = st.tabs(["Upcoming Bookings", "Booking History"])
         
-        # Display the upcoming bookings
         with tab1:
             st.subheader("Upcoming Bookings")
             if not upcoming_bookings:
@@ -445,7 +300,6 @@ def view_reservations():
                 upcoming_reservations_df.columns = ["Booking ID", "Date", "Start Time", "End Time", "Venue", "Booked by"]
                 st.table(upcoming_reservations_df.assign(hack='').set_index('hack'))
 
-        # Display the past bookings
         with tab2:
             st.subheader("Booking History (Past Bookings)")
             if not past_bookings:
@@ -456,97 +310,17 @@ def view_reservations():
                 past_reservations_df.columns = ["Booking ID", "Date", "Start Time", "End Time", "Venue", "Booked by"]
                 st.table(past_reservations_df.assign(hack='').set_index('hack'))
 
-        
-
-# In your Streamlit app, call the view_reservations() function to display the updated view.
-
-
-
-def send_confirmation_email(user_email,booking_id,name,description,selected_room,start_time,end_time):
-    # Your email credentials
-    sender_email = st.secrets['sender_email']
-    sender_password = st.secrets['sender_password']
-
-    # Create the email content
-    message = MIMEMultipart()
-    message["From"] = 'Meeting Room Booking System'
-    message["To"] = user_email
-    message["Subject"] = f"✅ Booking Confirmation: (ID-{booking_id})"
-
-    # Message body
-    #message_text = f"Hello {name}!\n\nWe're thrilled to confirm your booking. Here are the details of your reservation:\n\n{booking_details}\n\nGet ready for a productive meeting, and don't forget to bring your amazing ideas with you! We can't wait to see you!\n\nBest regards,\nYour Meeting Room Booking Team"
-    # Create the email content as an HTML table
-    message_text = f"""
-<html>
-<body>
-    <p>Hello {name}!</p>
-    <p>We're thrilled to confirm your booking. Here are the details of your reservation:</p>
-    <table style="width: 100%;">
-        <tr>
-            <td><strong>Booking ID:</strong></td>
-            <td>{booking_id}</td>
-        </tr>
-        <tr>
-            <td><strong>Meeting Title:</strong></td>
-            <td>{description}</td>
-        </tr>
-        <tr>
-            <td><strong>Date:</strong></td>
-            <td>{date}</td>
-        </tr>
-        <tr>
-            <td><strong>Location:</strong></td>
-            <td>{selected_room}</td>
-        </tr>
-        <tr>
-            <td><strong>Start Time:</strong></td>
-            <td>{start_time}</td>
-        </tr>
-        <tr>
-            <td><strong>End Time:</strong></td>
-            <td>{end_time}</td>
-        </tr>
-    </table>
-    <p>Get ready for a productive meeting, and don't forget to bring your amazing ideas with you! We can't wait to see you!</p>
-    <p>Best regards,<br>Your Meeting Room Booking Team</p>
-</body>
-</html>
-"""
-
-# Include the HTML content in the email
-    message.attach(MIMEText(message_text, "html"))
-
-# Send the email
-    
-    # Connect to the SMTP server
-    try:
-        # server = smtplib.SMTP("smtp.gmail.com", 587)  # Replace with your SMTP server and port
-        # server.starttls()
-        # server.login(sender_email, sender_password)
-
-        # # Send the email
-        # server.sendmail(sender_email, user_email, message.as_string())
-        # server.quit()
-         return True
-    except Exception as e:
-        print(f"Email not sent. Error: {str(e)}")
-        return False
-
-
-
+# Streamlit App
 st.set_page_config(
     page_title="Meeting Room Booking",
     page_icon=":calendar:",
     initial_sidebar_state="expanded",
 )
 
-
-
-# Streamlit App
 st.title("Sugam Group - Meeting Room Booking System")
 
 date = current_time_ist.date()
-time1=current_time_ist.time()
+time1 = current_time_ist.time()
 current_time1 = f"{time1.hour:02d}:{time1.minute:02d}"
 
 st.sidebar.button('Timezone 📍 Asia/Kolkata')

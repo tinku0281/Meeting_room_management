@@ -520,14 +520,14 @@ def send_confirmation_email(user_email,booking_id,name,description,selected_room
     
     # Connect to the SMTP server
     try:
-        server = smtplib.SMTP("smtp.gmail.com", 587)  # Replace with your SMTP server and port
-        server.starttls()
-        server.login(sender_email, sender_password)
+        # server = smtplib.SMTP("smtp.gmail.com", 587)  # Replace with your SMTP server and port
+        # server.starttls()
+        # server.login(sender_email, sender_password)
 
-        # Send the email
-        server.sendmail(sender_email, user_email, message.as_string())
-        server.quit()
-        return True
+        # # Send the email
+        # server.sendmail(sender_email, user_email, message.as_string())
+        # server.quit()
+         return True
     except Exception as e:
         print(f"Email not sent. Error: {str(e)}")
         return False

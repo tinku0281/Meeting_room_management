@@ -304,16 +304,16 @@ def cancel_room():
     
 
 def send_cancellation_email(user_email,booking_id,name,description,date1,selected_room,start_time,end_time):
-    # Your email credentials
-    sender_email = st.secrets['sender_email']
-    sender_password = st.secrets['sender_password']
+    # # Your email credentials
+    # sender_email = st.secrets['sender_email']
+    # sender_password = st.secrets['sender_password']
 
-    # Create the email content
-    message = MIMEMultipart()
-    message["From"] = 'Meeting Room Booking System'
-    message["To"] = user_email
-    message["Subject"] = f"🚫 Cancellation Confirmation: (ID-{booking_id})"
-
+    # # Create the email content
+    # message = MIMEMultipart()
+    # message["From"] = 'Meeting Room Booking System'
+    # message["To"] = user_email
+    # message["Subject"] = f"🚫 Cancellation Confirmation: (ID-{booking_id})"
+    Continue
     # Message body
     #message_text = f"Hello {name}!\n\nWe're sorry to inform you that your booking has been canceled. Here are the details of the canceled reservation:\n\n{booking_details}\n\nIf you have any questions or need further assistance, please don't hesitate to contact us.\n\nBest regards,\nYour Meeting Room Booking Team"
     # Create the email content as an HTML table

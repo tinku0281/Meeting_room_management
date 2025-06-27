@@ -1,3 +1,4 @@
+pip install gspread
 import streamlit as st
 import datetime
 from datetime import timedelta
